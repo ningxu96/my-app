@@ -1,26 +1,42 @@
 {
   "compilerOptions": {
+    /* JS 目标与基础库 */
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    /* 模块与解析 */
+    "module": "esnext",
+    "moduleResolution": "node",
     "allowJs": true,
-    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    /* 严格与检查 */
     "strict": true,
     "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
+    "skipLibCheck": true,
     "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    /* React / JSX */
     "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    /* 路径别名 */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    /* ESModule 互操作 */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "incremental": true,
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@/*": ["./*"]
-    }
+    ]
   },
   "include": [
     "next-env.d.ts",
@@ -30,5 +46,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
