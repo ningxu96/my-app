@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ConfigProvider } from 'antd';
 import { ReactNode } from "react";
 // 引入 Ant Design 的全局样式
 import "antd/dist/reset.css";
