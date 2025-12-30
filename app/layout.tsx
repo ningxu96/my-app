@@ -3,6 +3,7 @@ import { ConfigProvider } from 'antd';
 import { ReactNode } from "react";
 // 引入 Ant Design 的全局样式
 import "antd/dist/reset.css";
+import './globals.css';
 
 export const metadata: Metadata = {
   title: "My App",
