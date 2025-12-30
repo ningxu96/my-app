@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Drawer, Tabs, Button } from "antd";
-import { CloseOutlined, DownloadOutlined } from "@ant-design/icons";
+import { Drawer, Tabs } from "antd";
+import { CloseOutlined } from "@ant-design/icons";
 import type { TabsProps } from "antd";
 import StudentAnswersTab from "./StudentAnswersTab";
 import QuestionAnalysisTab from "./QuestionAnalysisTab";
@@ -376,16 +376,6 @@ const ExamDetailPanel: React.FC<ExamDetailPanelProps> = ({
           tabBarStyle={{
             marginBottom: 0,
           }}
-          tabBarExtraContent={
-            <Button
-              type="primary"
-              icon={<DownloadOutlined />}
-              size="small"
-              style={{ marginTop: 8 }}
-            >
-              微信助手发送
-            </Button>
-          }
         />
       </div>
     </Drawer>

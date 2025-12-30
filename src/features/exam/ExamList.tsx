@@ -14,7 +14,7 @@ const { Option } = Select;
 interface SearchFormValues {
   className?: string;
   examType?: string;
-  chapter?: string;
+  teacher?: string; // 带班老师
   dateRange?: [Dayjs, Dayjs];
 }
 
@@ -32,7 +32,7 @@ interface PaginationConfig {
 const fetchExamList = async (query: {
   className?: string;
   examType?: string;
-  chapter?: string;
+  teacher?: string; // 带班老师
   startDate?: string;
   endDate?: string;
   page: number;
@@ -43,15 +43,33 @@ const fetchExamList = async (query: {
 }> => {
   console.log("API 调用参数:", query);
   await new Promise((resolve) => setTimeout(resolve, 300));
+  
+  // 获取过滤后的数据
+  const filteredData = getMockData({
+    className: query.className,
+    examType: query.examType,
+    teacher: query.teacher,
+    startDate: query.startDate,
+    endDate: query.endDate,
+  });
+
+  // 分页处理
+  const start = (query.page - 1) * query.pageSize;
+  const end = start + query.pageSize;
+  const paginatedData = filteredData.slice(start, end);
+
   return {
-    data: getMockData(),
-    total: 15,
+    data: paginatedData,
+    total: filteredData.length, // 返回过滤后的总数
   };
 };
 
 // ==================== Mock 数据 ====================
 
-const getMockData = (): ExamRecord[] => {
+/**
+ * 获取所有 Mock 数据（未过滤）
+ */
+const getAllMockData = (): ExamRecord[] => {
   return [
     {
       key: "1",
@@ -357,6 +375,53 @@ const getMockData = (): ExamRecord[] => {
   ];
 };
 
+/**
+ * 根据筛选条件过滤 Mock 数据
+ */
+const getMockData = (query?: {
+  className?: string;
+  examType?: string;
+  teacher?: string; // 带班老师
+  startDate?: string;
+  endDate?: string;
+}): ExamRecord[] => {
+  let data = getAllMockData();
+
+  // 如果没有筛选条件，返回所有数据
+  if (!query) {
+    return data;
+  }
+
+  // 按班级名称筛选（模糊匹配）
+  if (query.className) {
+    const searchText = query.className.toLowerCase();
+    data = data.filter((item) =>
+      item.className.toLowerCase().includes(searchText)
+    );
+  }
+
+  // 按考试类型筛选（精确匹配）
+  if (query.examType) {
+    data = data.filter((item) => item.examType === query.examType);
+  }
+
+  // 按带班老师筛选（精确匹配）
+  if (query.teacher) {
+    data = data.filter((item) => item.teacher === query.teacher);
+  }
+
+  // 按日期范围筛选
+  if (query.startDate && query.endDate) {
+    // 注意：这里简化处理，实际项目中需要更复杂的日期比较
+    data = data.filter((item) => {
+      const examDate = item.examDateRange.split("～")[0]; // 取开始日期
+      return examDate >= query.startDate! && examDate <= query.endDate!;
+    });
+  }
+
+  return data;
+};
+
 // ==================== 主组件 ====================
 
 const ExamList: React.FC = () => {
@@ -429,20 +494,20 @@ const ExamList: React.FC = () => {
       width: 80,
       align: "center",
     },
-{
-  title: "操作",
-  key: "action",
-  width: 80,
-  fixed: "right",
-  render: (_, record) => (
-    <a
-      style={{ color: "#2266FF" }}
-      onClick={() => handleViewDetail(record)}
-    >
-      详情
-    </a>
-  ),
-},
+    {
+      title: "操作",
+      key: "action",
+      width: 80,
+      fixed: "right",
+      render: (_, record) => (
+        <a
+          style={{ color: "#2266FF" }}
+          onClick={() => handleViewDetail(record)}
+        >
+          详情
+        </a>
+      ),
+    },
   ];
 
   // ==================== 事件处理 ====================
@@ -456,7 +521,7 @@ const ExamList: React.FC = () => {
       const params = {
         className: searchParams?.className,
         examType: searchParams?.examType,
-        chapter: searchParams?.chapter,
+        teacher: searchParams?.teacher,
         startDate: searchParams?.dateRange?.[0]?.format("YYYY-MM-DD"),
         endDate: searchParams?.dateRange?.[1]?.format("YYYY-MM-DD"),
         page: pagination.current,
@@ -491,11 +556,9 @@ const ExamList: React.FC = () => {
    */
   const handleReset = () => {
     form.resetFields();
-    form.setFieldsValue({
-      className: "这是默认的班级名称不支持清空",
-    });
+    // 不再设置默认的班级名称，允许完全清空
     setPagination({ ...pagination, current: 1 });
-    loadData();
+    loadData(); // 传入空参数，显示所有数据
   };
 
   /**
@@ -547,12 +610,9 @@ const ExamList: React.FC = () => {
           form={form}
           layout="inline"
           style={{ marginBottom: 16 }}
-          initialValues={{
-            className: "这是默认的班级名称不支持清空",
-          }}
         >
           <Form.Item name="className" style={{ width: 240 }}>
-            <Input placeholder="请输入班级名称" disabled />
+            <Input placeholder="搜索班级名称/考试ID/手机号" allowClear />
           </Form.Item>
 
           <Form.Item name="examType" style={{ width: 160 }}>
@@ -565,11 +625,23 @@ const ExamList: React.FC = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="chapter" style={{ width: 160 }}>
-            <Select placeholder="章节" allowClear>
-              <Option value="章三02">章三02</Option>
-              <Option value="章三03">章三03</Option>
-              <Option value="章三04">章三04</Option>
+          <Form.Item name="teacher" style={{ width: 160 }}>
+            <Select placeholder="带班老师" allowClear>
+              <Option value="何桢">何桢</Option>
+              <Option value="冯梅">冯梅</Option>
+              <Option value="吴易奚">吴易奚</Option>
+              <Option value="吴诗琪">吴诗琪</Option>
+              <Option value="周琎">周琎</Option>
+              <Option value="孙芳">孙芳</Option>
+              <Option value="李建东">李建东</Option>
+              <Option value="李炎">李炎</Option>
+              <Option value="李炯泽">李炯泽</Option>
+              <Option value="赵慧">赵慧</Option>
+              <Option value="赵玉凤">赵玉凤</Option>
+              <Option value="郑思雅">郑思雅</Option>
+              <Option value="郑雅">郑雅</Option>
+              <Option value="钱乐惜">钱乐惜</Option>
+              <Option value="钱琳">钱琳</Option>
             </Select>
           </Form.Item>
 

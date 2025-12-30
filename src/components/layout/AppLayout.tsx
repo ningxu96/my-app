@@ -194,48 +194,101 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           left: 0,
           top: 0,
           bottom: 0,
-          background: "#001529",
+          background: "#1a1a1a",
         }}
       >
         {/* Logo 区域 */}
         <div
           style={{
-            height: 48,
+            height: 40,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             margin: "12px 0",
           }}
         >
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: "4px",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#fff",
-              fontSize: "16px",
-              fontWeight: "bold",
-            }}
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 28 28"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            S
-          </div>
+            <circle cx="14" cy="14" r="14" fill="#2266FF" />
+            <path
+              d="M8 14L12 18L20 10"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </div>
 
         {/* 主导航菜单 */}
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[selectedPrimaryKey]}
-          items={primaryMenuItems}
-          onClick={handlePrimaryMenuClick}
-          style={{
-            borderRight: 0,
-          }}
-        />
+        <div style={{ padding: "0 8px" }}>
+          {primaryMenuItems.map((item: any) => {
+            const isActive = item.key === selectedPrimaryKey;
+            return (
+              <div
+                key={item.key}
+                onClick={() => handlePrimaryMenuClick({ key: item.key } as any)}
+                style={{
+                  width: 44,
+                  height: 44,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  marginBottom: 16,
+                  background: isActive
+                    ? "rgba(34, 102, 255, 0.15)"
+                    : "transparent",
+                  transition: "background 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = "transparent";
+                  }
+                }}
+              >
+                {/* Icon */}
+                <div
+                  style={{
+                    fontSize: 16,
+                    color: isActive ? "#fff" : "rgba(255, 255, 255, 0.85)",
+                    marginBottom: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.icon}
+                </div>
+
+                {/* Label */}
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: isActive ? "#fff" : "rgba(255, 255, 255, 0.85)",
+                    lineHeight: "12px",
+                    textAlign: "center",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {item.label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </Sider>
 
       {/* ==================== 左侧二级导航 ==================== */}

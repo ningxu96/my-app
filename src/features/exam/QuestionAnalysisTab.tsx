@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Table, message } from "antd";
 import { PlusSquareOutlined, MinusSquareOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
+import QuestionDetailPanel from "./QuestionDetailPanel";
 
 // ==================== 类型定义 ====================
 
@@ -19,10 +20,10 @@ interface QuestionAnalysisRecord {
   accuracyRate: string;
   totalScore: number;
   avgScore: number | string;
-  level?: number; // 题目层级，用于子题目
+  level?: number; // 层级：0=大题，1=小题
   parentKey?: string; // 父题目key
-  hasChildren?: boolean; // 是否有子题目
-  children?: QuestionAnalysisRecord[];
+  hasChildren?: boolean; // 是否有子题
+  children?: QuestionAnalysisRecord[]; // 子题目
 }
 
 /**
@@ -45,6 +46,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "10.32%",
       totalScore: 5,
       avgScore: 4.52,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -56,6 +58,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "0%",
       totalScore: 10,
       avgScore: 4.52,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -67,6 +70,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "10.3%",
       totalScore: 10,
       avgScore: 4.52,
+      level: 0,
       hasChildren: true,
       children: [
         {
@@ -92,6 +96,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "-",
       totalScore: 10,
       avgScore: "-",
+      level: 0,
       hasChildren: false,
     },
     {
@@ -103,6 +108,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "-",
       totalScore: 10,
       avgScore: "-",
+      level: 0,
       hasChildren: false,
     },
     {
@@ -114,6 +120,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "10.32%",
       totalScore: 10,
       avgScore: 4,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -125,6 +132,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "10.32%",
       totalScore: 10,
       avgScore: 6.2,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -136,6 +144,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "10.32%",
       totalScore: 10,
       avgScore: 4.52,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -147,6 +156,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "100%",
       totalScore: 10,
       avgScore: 4.52,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -158,6 +168,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "100%",
       totalScore: 10,
       avgScore: 4.52,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -169,6 +180,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "100%",
       totalScore: 10,
       avgScore: 4.52,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -180,6 +192,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "100%",
       totalScore: 10,
       avgScore: 4.52,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -191,6 +204,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "100%",
       totalScore: 10,
       avgScore: 4.52,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -202,6 +216,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "100%",
       totalScore: 10,
       avgScore: 4.52,
+      level: 0,
       hasChildren: false,
     },
     {
@@ -213,6 +228,7 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
       accuracyRate: "100%",
       totalScore: 10,
       avgScore: 4.52,
+      level: 0,
       hasChildren: false,
     },
   ];
@@ -220,12 +236,17 @@ const generateMockData = (): QuestionAnalysisRecord[] => {
 
 // ==================== 主组件 ====================
 
-const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => {
+const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({
+  examId,
+}) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [dataSource, setDataSource] = useState<QuestionAnalysisRecord[]>([]);
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]);
 
-  // ==================== 数据加载 ====================
+  // 详情面板状态
+  const [detailOpen, setDetailOpen] = useState<boolean>(false);
+  const [currentRecord, setCurrentRecord] =
+    useState<QuestionAnalysisRecord | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -234,7 +255,7 @@ const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => 
       const mockData = generateMockData();
       setDataSource(mockData);
     } catch (error) {
-      console.error("加载题目分析数据失败:", error);
+      console.error("加载失败:", error);
       message.error("加载数据失败");
     } finally {
       setLoading(false);
@@ -243,21 +264,20 @@ const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => 
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [examId]);
 
-  // ==================== 事件处理 ====================
-
-  /**
-   * 查看详情
-   */
   const handleViewDetail = (record: QuestionAnalysisRecord) => {
-    message.info(`查看 ${record.questionNumber} 的详情`);
+    // 打开详情面板
+    setCurrentRecord(record);
+    setDetailOpen(true);
   };
 
-  /**
-   * 展开/收起子题目
-   */
+  // 关闭详情面板
+  const handleDetailClose = () => {
+    setDetailOpen(false);
+    setCurrentRecord(null);
+  };
+
   const handleExpand = (expanded: boolean, record: QuestionAnalysisRecord) => {
     if (expanded) {
       setExpandedRowKeys([...expandedRowKeys, record.key]);
@@ -266,33 +286,37 @@ const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => 
     }
   };
 
-  // ==================== 表格列定义 ====================
-
   const columns: ColumnsType<QuestionAnalysisRecord> = [
     {
       title: "题目序号",
       dataIndex: "questionNumber",
       key: "questionNumber",
       width: 100,
-      fixed: "left",
+      fixed: "left" as const,
       render: (text: string, record: QuestionAnalysisRecord) => {
         const isExpanded = expandedRowKeys.includes(record.key);
-        const hasChildren = record.hasChildren;
         const isSubQuestion = record.level === 1;
 
+        // 子题目样式：左侧缩进 48px
+        const style: React.CSSProperties = {
+          paddingLeft: isSubQuestion ? 48 : 0,
+          color: record.questionNumber === "第 3 题" ? "#2266FF" : "#333",
+          fontSize: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        };
+
         return (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              paddingLeft: isSubQuestion ? 48 : 0,
-            }}
-          >
-            {hasChildren && (
+          <div style={style}>
+            {/* 只有大题且有子题才显示展开图标 */}
+            {record.hasChildren && record.level === 0 && (
               <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleExpand(!isExpanded, record);
+                }}
                 style={{ cursor: "pointer", fontSize: 14 }}
-                onClick={() => handleExpand(!isExpanded, record)}
               >
                 {isExpanded ? (
                   <MinusSquareOutlined style={{ color: "#2266FF" }} />
@@ -301,17 +325,13 @@ const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => 
                 )}
               </span>
             )}
-            {!hasChildren && !isSubQuestion && (
-              <PlusSquareOutlined style={{ color: "#999", fontSize: 14 }} />
+            {/* 没有子题的大题也显示灰色加号（占位） */}
+            {!record.hasChildren && record.level === 0 && (
+              <PlusSquareOutlined
+                style={{ color: "#999", fontSize: 14, visibility: "hidden" }}
+              />
             )}
-            <span
-              style={{
-                fontSize: 12,
-                color: record.key === "3" ? "#2266FF" : "#333",
-              }}
-            >
-              {text}
-            </span>
+            <span>{text}</span>
           </div>
         );
       },
@@ -331,9 +351,9 @@ const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => 
       dataIndex: "answerCount",
       key: "answerCount",
       width: 90,
-      align: "center",
+      align: "center" as const,
       render: (count: number | null) => (
-        <span style={{ fontSize: 12, color: "#333" }}>
+        <span style={{ fontSize: 12 }}>
           {count !== null ? count : "-"}
         </span>
       ),
@@ -343,9 +363,9 @@ const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => 
       dataIndex: "correctCount",
       key: "correctCount",
       width: 90,
-      align: "center",
+      align: "center" as const,
       render: (count: number | null) => (
-        <span style={{ fontSize: 12, color: "#333" }}>
+        <span style={{ fontSize: 12 }}>
           {count !== null ? count : "-"}
         </span>
       ),
@@ -355,9 +375,9 @@ const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => 
       dataIndex: "accuracyRate",
       key: "accuracyRate",
       width: 90,
-      align: "center",
+      align: "center" as const,
       render: (rate: string) => (
-        <span style={{ fontSize: 12, color: "#333" }}>{rate}</span>
+        <span style={{ fontSize: 12 }}>{rate}</span>
       ),
     },
     {
@@ -365,9 +385,9 @@ const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => 
       dataIndex: "totalScore",
       key: "totalScore",
       width: 90,
-      align: "center",
+      align: "center" as const,
       render: (score: number) => (
-        <span style={{ fontSize: 12, color: "#333" }}>{score}</span>
+        <span style={{ fontSize: 12 }}>{score}</span>
       ),
     },
     {
@@ -375,17 +395,17 @@ const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => 
       dataIndex: "avgScore",
       key: "avgScore",
       width: 90,
-      align: "center",
+      align: "center" as const,
       render: (score: number | string) => (
-        <span style={{ fontSize: 12, color: "#333" }}>{score}</span>
+        <span style={{ fontSize: 12 }}>{score}</span>
       ),
     },
     {
       title: "操作",
       key: "action",
       width: 80,
-      fixed: "right",
-      align: "center",
+      fixed: "right" as const,
+      align: "center" as const,
       render: (_: any, record: QuestionAnalysisRecord) => (
         <a
           style={{ fontSize: 12, color: "#2266FF" }}
@@ -397,26 +417,33 @@ const QuestionAnalysisTab: React.FC<QuestionAnalysisTabProps> = ({ examId }) => 
     },
   ];
 
-  // ==================== 渲染 ====================
-
   return (
-    <div style={{ padding: "16px 0" }}>
-      <Table
-        columns={columns}
-        dataSource={dataSource}
-        loading={loading}
-        pagination={false}
-        scroll={{ x: 1200 }}
-        size="small"
-        bordered
-        expandable={{
-          expandedRowKeys,
-          onExpand: handleExpand,
-          expandIcon: () => null, // 隐藏默认展开图标，使用自定义图标
-          indentSize: 0,
-        }}
+    <>
+      <div style={{ padding: "16px 0" }}>
+        <Table
+          columns={columns}
+          dataSource={dataSource}
+          loading={loading}
+          pagination={false}
+          scroll={{ x: 1200 }}
+          size="small"
+          bordered
+          expandable={{
+            expandedRowKeys,
+            onExpand: handleExpand,
+            expandIcon: () => null, // 隐藏默认展开图标，使用自定义图标
+            indentSize: 0, // 不使用默认缩进
+          }}
+        />
+      </div>
+
+      {/* 题目详情面板（独立的第二层Drawer） */}
+      <QuestionDetailPanel
+        open={detailOpen}
+        onClose={handleDetailClose}
+        record={currentRecord}
       />
-    </div>
+    </>
   );
 };
 
